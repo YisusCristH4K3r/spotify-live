@@ -50,37 +50,47 @@ func (q *Queries) CreateArtist(ctx context.Context, arg CreateArtistParams) (Art
 
 const createFriendActivity = `-- name: CreateFriendActivity :one
 
-INSERT INTO FriendActivity (timestamp, user_uri, track_uri)
-VALUES (?1, ?2, ?3) RETURNING timestamp, user_uri, track_uri
+INSERT INTO FriendActivity (timestamp, user_uri, track_uri, context_uri)
+VALUES (?1, ?2, ?3, ?4) RETURNING timestamp, user_uri, track_uri, context_uri
 `
 
 type CreateFriendActivityParams struct {
-	Timestamp int64
-	UserUri   sql.NullString
-	TrackUri  sql.NullString
+	Timestamp  int64
+	UserUri    sql.NullString
+	TrackUri   sql.NullString
+	ContextUri sql.NullString
 }
 
 // FRIENDAcActivity --
 func (q *Queries) CreateFriendActivity(ctx context.Context, arg CreateFriendActivityParams) (FriendActivity, error) {
-	row := q.db.QueryRowContext(ctx, createFriendActivity, arg.Timestamp, arg.UserUri, arg.TrackUri)
+	row := q.db.QueryRowContext(ctx, createFriendActivity,
+		arg.Timestamp,
+		arg.UserUri,
+		arg.TrackUri,
+		arg.ContextUri,
+	)
 	var i FriendActivity
-	err := row.Scan(&i.Timestamp, &i.UserUri, &i.TrackUri)
+	err := row.Scan(
+		&i.Timestamp,
+		&i.UserUri,
+		&i.TrackUri,
+		&i.ContextUri,
+	)
 	return i, err
 }
 
 const createTrack = `-- name: CreateTrack :one
 
-INSERT INTO Tracks (uri, name, image_url, album_uri, artist_uri, context_uri)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING uri, name, image_url, album_uri, artist_uri, context_uri
+INSERT INTO Tracks (uri, name, image_url, album_uri, artist_uri)
+VALUES (?1, ?2, ?3, ?4, ?5) RETURNING uri, name, image_url, album_uri, artist_uri
 `
 
 type CreateTrackParams struct {
-	Uri        string
-	Name       string
-	ImageUrl   sql.NullString
-	AlbumUri   sql.NullString
-	ArtistUri  sql.NullString
-	ContextUri sql.NullString
+	Uri       string
+	Name      string
+	ImageUrl  sql.NullString
+	AlbumUri  sql.NullString
+	ArtistUri sql.NullString
 }
 
 // TRACKS --
@@ -91,7 +101,6 @@ func (q *Queries) CreateTrack(ctx context.Context, arg CreateTrackParams) (Track
 		arg.ImageUrl,
 		arg.AlbumUri,
 		arg.ArtistUri,
-		arg.ContextUri,
 	)
 	var i Track
 	err := row.Scan(
@@ -100,7 +109,6 @@ func (q *Queries) CreateTrack(ctx context.Context, arg CreateTrackParams) (Track
 		&i.ImageUrl,
 		&i.AlbumUri,
 		&i.ArtistUri,
-		&i.ContextUri,
 	)
 	return i, err
 }
@@ -175,25 +183,32 @@ const deleteFriendActivity = `-- name: DeleteFriendActivity :one
 DELETE
 FROM FriendActivity
 WHERE user_uri = ?1
-  AND track_uri = ?2 RETURNING timestamp, user_uri, track_uri
+  AND track_uri = ?2
+  AND context_uri = ?3 RETURNING timestamp, user_uri, track_uri, context_uri
 `
 
 type DeleteFriendActivityParams struct {
-	UserUri  sql.NullString
-	TrackUri sql.NullString
+	UserUri    sql.NullString
+	TrackUri   sql.NullString
+	ContextUri sql.NullString
 }
 
 func (q *Queries) DeleteFriendActivity(ctx context.Context, arg DeleteFriendActivityParams) (FriendActivity, error) {
-	row := q.db.QueryRowContext(ctx, deleteFriendActivity, arg.UserUri, arg.TrackUri)
+	row := q.db.QueryRowContext(ctx, deleteFriendActivity, arg.UserUri, arg.TrackUri, arg.ContextUri)
 	var i FriendActivity
-	err := row.Scan(&i.Timestamp, &i.UserUri, &i.TrackUri)
+	err := row.Scan(
+		&i.Timestamp,
+		&i.UserUri,
+		&i.TrackUri,
+		&i.ContextUri,
+	)
 	return i, err
 }
 
 const deleteTrack = `-- name: DeleteTrack :one
 DELETE
 FROM Tracks
-WHERE uri = ?1 RETURNING uri, name, image_url, album_uri, artist_uri, context_uri
+WHERE uri = ?1 RETURNING uri, name, image_url, album_uri, artist_uri
 `
 
 func (q *Queries) DeleteTrack(ctx context.Context, uri string) (Track, error) {
@@ -205,7 +220,6 @@ func (q *Queries) DeleteTrack(ctx context.Context, uri string) (Track, error) {
 		&i.ImageUrl,
 		&i.AlbumUri,
 		&i.ArtistUri,
-		&i.ContextUri,
 	)
 	return i, err
 }
@@ -263,7 +277,7 @@ func (q *Queries) GetArtistByUri(ctx context.Context, uri string) (Artist, error
 }
 
 const getLastFriendActivityByUserUri = `-- name: GetLastFriendActivityByUserUri :one
-SELECT timestamp, user_uri, track_uri
+SELECT timestamp, user_uri, track_uri, context_uri
 FROM FriendActivity
 WHERE user_uri = ?1
 ORDER BY timestamp DESC
@@ -273,12 +287,17 @@ LIMIT 1
 func (q *Queries) GetLastFriendActivityByUserUri(ctx context.Context, userUri sql.NullString) (FriendActivity, error) {
 	row := q.db.QueryRowContext(ctx, getLastFriendActivityByUserUri, userUri)
 	var i FriendActivity
-	err := row.Scan(&i.Timestamp, &i.UserUri, &i.TrackUri)
+	err := row.Scan(
+		&i.Timestamp,
+		&i.UserUri,
+		&i.TrackUri,
+		&i.ContextUri,
+	)
 	return i, err
 }
 
 const getTrackByUri = `-- name: GetTrackByUri :one
-SELECT uri, name, image_url, album_uri, artist_uri, context_uri
+SELECT uri, name, image_url, album_uri, artist_uri
 FROM Tracks
 WHERE uri = ?1
 `
@@ -292,7 +311,6 @@ func (q *Queries) GetTrackByUri(ctx context.Context, uri string) (Track, error) 
 		&i.ImageUrl,
 		&i.AlbumUri,
 		&i.ArtistUri,
-		&i.ContextUri,
 	)
 	return i, err
 }
@@ -363,19 +381,31 @@ const updateFriendActivityTimestamp = `-- name: UpdateFriendActivityTimestamp :o
 UPDATE FriendActivity
 SET timestamp = ?2
 WHERE user_uri = ?1
-  AND track_uri = ?3 RETURNING timestamp, user_uri, track_uri
+  AND track_uri = ?3
+  AND context_uri = ?4 RETURNING timestamp, user_uri, track_uri, context_uri
 `
 
 type UpdateFriendActivityTimestampParams struct {
-	UserUri   sql.NullString
-	Timestamp int64
-	TrackUri  sql.NullString
+	UserUri    sql.NullString
+	Timestamp  int64
+	TrackUri   sql.NullString
+	ContextUri sql.NullString
 }
 
 func (q *Queries) UpdateFriendActivityTimestamp(ctx context.Context, arg UpdateFriendActivityTimestampParams) (FriendActivity, error) {
-	row := q.db.QueryRowContext(ctx, updateFriendActivityTimestamp, arg.UserUri, arg.Timestamp, arg.TrackUri)
+	row := q.db.QueryRowContext(ctx, updateFriendActivityTimestamp,
+		arg.UserUri,
+		arg.Timestamp,
+		arg.TrackUri,
+		arg.ContextUri,
+	)
 	var i FriendActivity
-	err := row.Scan(&i.Timestamp, &i.UserUri, &i.TrackUri)
+	err := row.Scan(
+		&i.Timestamp,
+		&i.UserUri,
+		&i.TrackUri,
+		&i.ContextUri,
+	)
 	return i, err
 }
 
@@ -384,18 +414,16 @@ UPDATE Tracks
 SET name        = ?2,
     image_url   = ?3,
     album_uri   = ?4,
-    artist_uri  = ?5,
-    context_uri = ?6
-WHERE uri = ?1 RETURNING uri, name, image_url, album_uri, artist_uri, context_uri
+    artist_uri  = ?5
+WHERE uri = ?1 RETURNING uri, name, image_url, album_uri, artist_uri
 `
 
 type UpdateTrackParams struct {
-	Uri        string
-	Name       string
-	ImageUrl   sql.NullString
-	AlbumUri   sql.NullString
-	ArtistUri  sql.NullString
-	ContextUri sql.NullString
+	Uri       string
+	Name      string
+	ImageUrl  sql.NullString
+	AlbumUri  sql.NullString
+	ArtistUri sql.NullString
 }
 
 func (q *Queries) UpdateTrack(ctx context.Context, arg UpdateTrackParams) (Track, error) {
@@ -405,7 +433,6 @@ func (q *Queries) UpdateTrack(ctx context.Context, arg UpdateTrackParams) (Track
 		arg.ImageUrl,
 		arg.AlbumUri,
 		arg.ArtistUri,
-		arg.ContextUri,
 	)
 	var i Track
 	err := row.Scan(
@@ -414,7 +441,6 @@ func (q *Queries) UpdateTrack(ctx context.Context, arg UpdateTrackParams) (Track
 		&i.ImageUrl,
 		&i.AlbumUri,
 		&i.ArtistUri,
-		&i.ContextUri,
 	)
 	return i, err
 }

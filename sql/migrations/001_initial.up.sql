@@ -52,3 +52,18 @@ CREATE TABLE FriendActivity
     FOREIGN KEY (user_uri) REFERENCES Users (uri),
     FOREIGN KEY (track_uri) REFERENCES Tracks (uri)
 );
+
+create view curated as
+select datetime(round(timestamp / 1000), 'unixepoch') time,
+       F.user_uri                                     user,
+       T.name                                         track,
+       T.uri                                          uri,
+       A2.name                                        artist,
+       A.name                                         album,
+       C.name as                                      playlis
+from FriendActivity F
+         join Tracks T on T.uri = F.track_uri
+         join Albums A on A.uri = T.album_uri
+         join Artists A2 on T.artist_uri = A2.uri
+         join TrackContexts C on T.context_uri = C.uri
+order by time desc

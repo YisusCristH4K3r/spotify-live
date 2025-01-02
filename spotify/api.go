@@ -31,7 +31,7 @@ func NewApiClient(spDcCookie string) *ApiClient {
 	return client
 }
 
-// Do sends an HTTP request, refreshing the token if necessary.
+// Do send an HTTP request, refreshing the token if necessary.
 func (api *ApiClient) Do(req *http.Request) (*http.Response, error) {
 	if err := api.ensureTokenValid(); err != nil {
 		return nil, err

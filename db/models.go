@@ -18,19 +18,29 @@ type Artist struct {
 	Name string
 }
 
+type Curated struct {
+	Time     interface{}
+	User     sql.NullString
+	Track    string
+	Uri      string
+	Artist   string
+	Album    string
+	Playlist string
+}
+
 type FriendActivity struct {
-	Timestamp int64
-	UserUri   sql.NullString
-	TrackUri  sql.NullString
+	Timestamp  int64
+	UserUri    sql.NullString
+	TrackUri   sql.NullString
+	ContextUri sql.NullString
 }
 
 type Track struct {
-	Uri        string
-	Name       string
-	ImageUrl   sql.NullString
-	AlbumUri   sql.NullString
-	ArtistUri  sql.NullString
-	ContextUri sql.NullString
+	Uri       string
+	Name      string
+	ImageUrl  sql.NullString
+	AlbumUri  sql.NullString
+	ArtistUri sql.NullString
 }
 
 type TrackContext struct {

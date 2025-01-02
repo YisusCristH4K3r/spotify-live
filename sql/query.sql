@@ -92,8 +92,8 @@ WHERE uri = ?1 RETURNING *;
 -- TRACKS --
 
 -- name: CreateTrack :one
-INSERT INTO Tracks (uri, name, image_url, album_uri, artist_uri, context_uri)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING *;
+INSERT INTO Tracks (uri, name, image_url, album_uri, artist_uri)
+VALUES (?1, ?2, ?3, ?4, ?5) RETURNING *;
 
 -- name: GetTrackByUri :one
 SELECT *
@@ -105,8 +105,7 @@ UPDATE Tracks
 SET name        = ?2,
     image_url   = ?3,
     album_uri   = ?4,
-    artist_uri  = ?5,
-    context_uri = ?6
+    artist_uri  = ?5
 WHERE uri = ?1 RETURNING *;
 
 -- name: DeleteTrack :one
@@ -118,8 +117,8 @@ WHERE uri = ?1 RETURNING *;
 -- FRIENDAcActivity --
 
 -- name: CreateFriendActivity :one
-INSERT INTO FriendActivity (timestamp, user_uri, track_uri)
-VALUES (?1, ?2, ?3) RETURNING *;
+INSERT INTO FriendActivity (timestamp, user_uri, track_uri, context_uri)
+VALUES (?1, ?2, ?3, ?4) RETURNING *;
 
 -- name: GetLastFriendActivityByUserUri :one
 SELECT *
@@ -133,10 +132,12 @@ LIMIT 1;
 UPDATE FriendActivity
 SET timestamp = ?2
 WHERE user_uri = ?1
-  AND track_uri = ?3 RETURNING *;
+  AND track_uri = ?3
+  AND context_uri = ?4 RETURNING *;
 
 -- name: DeleteFriendActivity :one
 DELETE
 FROM FriendActivity
 WHERE user_uri = ?1
-  AND track_uri = ?2 RETURNING *;
+  AND track_uri = ?2
+  AND context_uri = ?3 RETURNING *;

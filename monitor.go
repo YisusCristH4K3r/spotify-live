@@ -5,8 +5,12 @@ import (
 	"SpotifyLive/spotify"
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"fmt"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/pkger"
+	"github.com/markbates/pkger"
 	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
@@ -14,8 +18,8 @@ import (
 	"time"
 )
 
-//go:embed sql/schema.sql
-var ddl string
+//go:embed sql/migrations
+var _ embed.FS
 
 func initDatabase(ctx context.Context, db string) (*sql.DB, error) {
 	//database, err := sql.Open("sqlite", ":memory:")
@@ -24,10 +28,16 @@ func initDatabase(ctx context.Context, db string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// create tables
-	//if _, err := database.ExecContext(ctx, ddl); err != nil {
-	//	return nil, err
-	//}
+	pkger.Include("/sql/migrations")
+	driver, err := sqlite.WithInstance(database, &sqlite.Config{})
+	m, migrationErr := migrate.NewWithDatabaseInstance(
+		"pkger:///sql/migrations",
+		"sqlite", driver)
+	migrationErr = m.Up()
+	if migrationErr != nil {
+		m.Close()
+		return nil, err
+	}
 
 	return database, nil
 }
@@ -54,12 +64,12 @@ func StartMonitor(spDcCookie string, dbPath string) {
 	queries := db.New(database)
 
 	// Goroutine that performs an action every minute
-	process_activity(api, ctx, queries)
+	processActivity(api, ctx, queries)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				process_activity(api, ctx, queries)
+				processActivity(api, ctx, queries)
 			}
 		}
 	}()
@@ -71,7 +81,7 @@ func StartMonitor(spDcCookie string, dbPath string) {
 
 }
 
-func process_activity(api *spotify.ApiClient, ctx context.Context, queries *db.Queries) {
+func processActivity(api *spotify.ApiClient, ctx context.Context, queries *db.Queries) {
 	// Get Friend Activity
 	activityResponse, err := api.GetFriendActivity()
 	if err != nil {
@@ -142,12 +152,11 @@ func process_activity(api *spotify.ApiClient, ctx context.Context, queries *db.Q
 		_, err = queries.GetTrackByUri(ctx, activity.Track.Uri)
 		if err != nil {
 			_, err = queries.CreateTrack(ctx, db.CreateTrackParams{
-				Uri:        activity.Track.Uri,
-				Name:       activity.Track.Name,
-				ImageUrl:   sql.NullString{String: activity.Track.ImageUrl, Valid: true},
-				AlbumUri:   sql.NullString{String: activity.Track.Album.Uri, Valid: true},
-				ArtistUri:  sql.NullString{String: activity.Track.Artist.Uri, Valid: true},
-				ContextUri: sql.NullString{String: activity.Track.Context.Uri, Valid: true},
+				Uri:       activity.Track.Uri,
+				Name:      activity.Track.Name,
+				ImageUrl:  sql.NullString{String: activity.Track.ImageUrl, Valid: true},
+				AlbumUri:  sql.NullString{String: activity.Track.Album.Uri, Valid: true},
+				ArtistUri: sql.NullString{String: activity.Track.Artist.Uri, Valid: true},
 			})
 			if err != nil {
 				fmt.Printf("\nError inserting track %x: [%s]", activity.Track, err)
@@ -156,9 +165,10 @@ func process_activity(api *spotify.ApiClient, ctx context.Context, queries *db.Q
 		}
 
 		_, err = queries.CreateFriendActivity(ctx, db.CreateFriendActivityParams{
-			Timestamp: activity.Timestamp,
-			UserUri:   sql.NullString{String: activity.User.Uri, Valid: true},
-			TrackUri:  sql.NullString{String: activity.Track.Uri, Valid: true},
+			Timestamp:  activity.Timestamp,
+			UserUri:    sql.NullString{String: activity.User.Uri, Valid: true},
+			TrackUri:   sql.NullString{String: activity.Track.Uri, Valid: true},
+			ContextUri: sql.NullString{String: activity.Track.Context.Uri, Valid: true},
 		})
 		if err != nil {
 			fmt.Printf("\nError inserting activity %x: [%s]", activity, err)
