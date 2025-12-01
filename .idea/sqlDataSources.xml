@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDataSourceStorage">
+    <option name="dataSources">
+      <list>
+        <State>
+          <option name="id" value="22ebcfac-22eb-47cd-9511-ae2f6452a0ba" />
+          <option name="name" value="DDL data source" />
+          <option name="dbmsName" value="SQLITE" />
+          <option name="urls">
+            <array>
+              <option value="file://$PROJECT_DIR$/sql/migrations" />
+            </array>
+          </option>
+        </State>
+      </list>
+    </option>
+  </component>
+</project>
