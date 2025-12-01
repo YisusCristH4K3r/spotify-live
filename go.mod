@@ -5,11 +5,14 @@ go 1.23
 require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/markbates/pkger v0.17.1
+	github.com/pquerna/otp v1.4.0
 	github.com/spf13/cobra v1.8.1
 	modernc.org/sqlite v1.34.2
 )
 
 require (
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gobuffalo/here v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -17,7 +20,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/markbates/pkger v0.17.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect

@@ -276,6 +276,113 @@ func (q *Queries) GetArtistByUri(ctx context.Context, uri string) (Artist, error
 	return i, err
 }
 
+const getFriendActivityByUserUri = `-- name: GetFriendActivityByUserUri :many
+SELECT timestamp, user_uri, track_uri, context_uri
+FROM FriendActivity
+WHERE user_uri = ?1
+ORDER BY timestamp DESC
+    LIMIT 100
+OFFSET ?2
+`
+
+type GetFriendActivityByUserUriParams struct {
+	UserUri sql.NullString
+	Offset  int64
+}
+
+func (q *Queries) GetFriendActivityByUserUri(ctx context.Context, arg GetFriendActivityByUserUriParams) ([]FriendActivity, error) {
+	rows, err := q.db.QueryContext(ctx, getFriendActivityByUserUri, arg.UserUri, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FriendActivity
+	for rows.Next() {
+		var i FriendActivity
+		if err := rows.Scan(
+			&i.Timestamp,
+			&i.UserUri,
+			&i.TrackUri,
+			&i.ContextUri,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFullActivity = `-- name: GetFullActivity :many
+select timestamp                            time,
+       F.user_uri                           user,
+       T.name                               track,
+       T.uri                                uri,
+       A2.name                              artist,
+       A.name                               album,
+       C.name as                            playlist
+from FriendActivity F
+    join Tracks T on T.uri = F.track_uri
+    join Albums A on A.uri = T.album_uri
+    join Artists A2 on T.artist_uri = A2.uri
+    join TrackContexts C on F.context_uri = C.uri
+WHERE F.user_uri = ?1
+order by time desc
+    LIMIT 100
+OFFSET ?2
+`
+
+type GetFullActivityParams struct {
+	UserUri sql.NullString
+	Offset  int64
+}
+
+type GetFullActivityRow struct {
+	Time     int64
+	User     sql.NullString
+	Track    string
+	Uri      string
+	Artist   string
+	Album    string
+	Playlist string
+}
+
+func (q *Queries) GetFullActivity(ctx context.Context, arg GetFullActivityParams) ([]GetFullActivityRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFullActivity, arg.UserUri, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFullActivityRow
+	for rows.Next() {
+		var i GetFullActivityRow
+		if err := rows.Scan(
+			&i.Time,
+			&i.User,
+			&i.Track,
+			&i.Uri,
+			&i.Artist,
+			&i.Album,
+			&i.Playlist,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastFriendActivityByUserUri = `-- name: GetLastFriendActivityByUserUri :one
 SELECT timestamp, user_uri, track_uri, context_uri
 FROM FriendActivity

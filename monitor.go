@@ -7,11 +7,6 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	_ "github.com/golang-migrate/migrate/v4/source/pkger"
-	"github.com/markbates/pkger"
-	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,27 +15,6 @@ import (
 
 //go:embed sql/migrations
 var _ embed.FS
-
-func initDatabase(ctx context.Context, db string) (*sql.DB, error) {
-	//database, err := sql.Open("sqlite", ":memory:")
-	database, err := sql.Open("sqlite", db)
-	if err != nil {
-		return nil, err
-	}
-
-	pkger.Include("/sql/migrations")
-	driver, err := sqlite.WithInstance(database, &sqlite.Config{})
-	m, migrationErr := migrate.NewWithDatabaseInstance(
-		"pkger:///sql/migrations",
-		"sqlite", driver)
-	migrationErr = m.Up()
-	if migrationErr != nil {
-		m.Close()
-		return nil, err
-	}
-
-	return database, nil
-}
 
 func StartMonitor(spDcCookie string, dbPath string) {
 	ctx := context.Background()
@@ -55,7 +29,7 @@ func StartMonitor(spDcCookie string, dbPath string) {
 	api := spotify.NewApiClient(spDcCookie)
 
 	// Init Database
-	database, err := initDatabase(ctx, dbPath)
+	database, err := db.InitDatabase(ctx, dbPath)
 	if err != nil {
 		fmt.Printf("\nError initializing the database: %s", err)
 		return
@@ -85,7 +59,7 @@ func processActivity(api *spotify.ApiClient, ctx context.Context, queries *db.Qu
 	// Get Friend Activity
 	activityResponse, err := api.GetFriendActivity()
 	if err != nil {
-		fmt.Println("\nError getting activity activity:", err)
+		fmt.Println("\nError getting activity:", err)
 		return
 	}
 
