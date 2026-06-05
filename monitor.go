@@ -19,6 +19,8 @@ var _ embed.FS
 func StartMonitor(spDcCookie string, dbPath string) {
 	ctx := context.Background()
 
+	fmt.Println("Starting Spotify Live Monitor...")
+
 	// Create a channel to receive OS signals (e.g., SIGINT for Ctrl+C)
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)

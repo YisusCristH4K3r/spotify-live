@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/pkger"

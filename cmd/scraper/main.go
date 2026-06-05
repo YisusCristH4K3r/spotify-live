@@ -3,8 +3,9 @@ package main
 import (
 	monitor "SpotifyLive"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 const flagCookie = "cookie"
